@@ -1,0 +1,118 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Tenant {
+  id                 String    @id @default(uuid())
+  nombre             String
+  plan               String    @default("basic")
+  iva_porcentaje     Float     @default(21)
+  margen_porcentaje  Float     @default(35)
+  createdAt          DateTime  @default(now())
+
+  kioscos    Kiosco[]
+  productos  Producto[]
+  clientes   Cliente[]
+}
+
+model Kiosco {
+  id        String   @id @default(uuid())
+  tenantId  String
+  nombre    String
+  ubicacion String?
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  tenant Tenant  @relation(fields: [tenantId], references: [id])
+  ventas Venta[]
+}
+
+model Producto {
+  id        String     @id @default(uuid())
+  tenantId  String
+  nombre    String
+  categoria String
+  imagenUrl String?
+  activo    Boolean    @default(true)
+  createdAt DateTime   @default(now())
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id])
+  variantes Variante[]
+}
+
+model Variante {
+  id            String   @id @default(uuid())
+  productoId    String
+  sabor_tipo    String
+  precio        Float
+  precioCosto   Float
+  codigoBarras  String?
+  createdAt     DateTime @default(now())
+
+  producto    Producto    @relation(fields: [productoId], references: [id])
+  stock       Stock?
+  ventaItems  VentaItem[]
+}
+
+model Stock {
+  id           String   @id @default(uuid())
+  varianteId   String   @unique
+  cantidad     Int      @default(0)
+  stockMinimo  Int      @default(5)
+  updatedAt    DateTime @updatedAt
+
+  variante Variante @relation(fields: [varianteId], references: [id])
+}
+
+model Cliente {
+  id           String   @id @default(uuid())
+  tenantId     String
+  nombre       String
+  telefono     String?
+  saldoCuenta  Float    @default(0)
+  createdAt    DateTime @default(now())
+
+  tenant Tenant  @relation(fields: [tenantId], references: [id])
+  ventas Venta[]
+}
+
+model Venta {
+  id        String   @id @default(uuid())
+  kioscoId  String
+  clienteId String?
+  total     Float
+  estado    String   @default("completada")
+  createdAt DateTime @default(now())
+
+  kiosco  Kiosco     @relation(fields: [kioscoId], references: [id])
+  cliente Cliente?   @relation(fields: [clienteId], references: [id])
+  items   VentaItem[]
+  pagos   Pago[]
+}
+
+model VentaItem {
+  id             String  @id @default(uuid())
+  ventaId        String
+  varianteId     String
+  cantidad       Int
+  precioUnitario Float
+
+  venta    Venta    @relation(fields: [ventaId], references: [id])
+  variante Variante @relation(fields: [varianteId], references: [id])
+}
+
+model Pago {
+  id                String   @id @default(uuid())
+  ventaId           String
+  metodo            String
+  monto             Float
+  estado            String   @default("aprobado")
+  referenciaExterna String?
+  createdAt         DateTime @default(now())
+
+  venta Venta @relation(fields: [ventaId], references: [id])
+}
