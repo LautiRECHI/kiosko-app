@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import productsRouter from "./routes/products";
 import importRouter from "./routes/import";
+import salesRouter from "./routes/sales";
 
 const app = express();
 
@@ -14,5 +15,6 @@ app.get("/", (req, res) => {
 
 app.use("/products", productsRouter);
 app.use("/import", importRouter);
+app.use("/sales", salesRouter);
 
 export default app;

@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../../api/client";
 import { useCartStore } from "../../store/cartStore";
 
@@ -23,6 +24,7 @@ export default function Catalogo() {
   const searchRef = useRef<HTMLInputElement>(null);
   const agregar = useCartStore((s) => s.agregar);
   const items = useCartStore((s) => s.items);
+  const navigate = useNavigate();
 
   useEffect(() => {
     api.get("/products").then((res) => setProductos(res.data));
@@ -51,7 +53,10 @@ export default function Catalogo() {
           onChange={(e) => setBusqueda(e.target.value)}
           className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-white/70 placeholder-white/30 w-72 focus:outline-none focus:border-primary"
         />
-        <button className="bg-primary text-white text-sm font-medium px-4 py-2 rounded-lg">
+        <button
+          onClick={() => navigate("/carrito")}
+          className="bg-primary text-white text-sm font-medium px-4 py-2 rounded-lg"
+        >
           Carrito ({totalItems})
         </button>
       </div>
