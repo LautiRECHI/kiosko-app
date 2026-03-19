@@ -7,6 +7,7 @@ interface Variante {
   id: string;
   sabor_tipo: string;
   precio: number;
+  codigoBarras: string | null;
   stock: { cantidad: number } | null;
 }
 
@@ -21,6 +22,7 @@ export default function Catalogo() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [busqueda, setBusqueda] = useState("");
   const [categoriaActiva, setCategoriaActiva] = useState("Todos");
+  const [scanFeedback, setScanFeedback] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
   const agregar = useCartStore((s) => s.agregar);
   const items = useCartStore((s) => s.items);
@@ -30,6 +32,34 @@ export default function Catalogo() {
     api.get("/products").then((res) => setProductos(res.data));
     searchRef.current?.focus();
   }, []);
+
+  const buscarPorCodigo = (codigo: string) => {
+    for (const producto of productos) {
+      for (const variante of producto.variantes) {
+        if (variante.codigoBarras === codigo) {
+          agregar({
+            varianteId: variante.id,
+            nombre: producto.nombre,
+            sabor_tipo: variante.sabor_tipo,
+            precio: variante.precio,
+            cantidad: 1,
+          });
+          setScanFeedback(`✓ ${producto.nombre} ${variante.sabor_tipo} agregado`);
+          setTimeout(() => setScanFeedback(""), 2000);
+          setBusqueda("");
+          return;
+        }
+      }
+    }
+    setScanFeedback("Producto no encontrado");
+    setTimeout(() => setScanFeedback(""), 2000);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      buscarPorCodigo(busqueda);
+    }
+  };
 
   const categorias = ["Todos", ...Array.from(new Set(productos.map((p) => p.categoria)))];
 
@@ -51,6 +81,7 @@ export default function Catalogo() {
           placeholder="Buscar producto o escanear codigo..."
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
+          onKeyDown={handleKeyDown}
           className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-white/70 placeholder-white/30 w-72 focus:outline-none focus:border-primary"
         />
         <button
@@ -109,8 +140,10 @@ export default function Catalogo() {
       </div>
 
       <div className="mx-6 mb-6 bg-primary/10 border border-primary/20 rounded-xl px-4 py-3 flex items-center gap-3">
-        <div className="w-2 h-2 rounded-full bg-primary"></div>
-        <span className="text-xs text-white/40">Lector de codigo de barras activo</span>
+        <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+        <span className="text-xs text-white/40">
+          {scanFeedback || "Lector de codigo de barras activo — escaneá para agregar al carrito"}
+        </span>
       </div>
     </div>
   );
