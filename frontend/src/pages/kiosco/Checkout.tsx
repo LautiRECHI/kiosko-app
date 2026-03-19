@@ -4,9 +4,16 @@ import { useNavigate } from "react-router-dom";
 import api from "../../api/client";
 
 const TENANT_ID = "7904fad8-27b4-43c6-a82c-25b93fa7bfd3";
-
 const CBU = "0000003100012345678901";
 const ALIAS = "KIOSCO.DEMO.MP";
+
+interface TicketData {
+  items: { nombre: string; sabor_tipo: string; cantidad: number; precio: number }[];
+  total: number;
+  metodo: string;
+  fecha: string;
+  numero: string;
+}
 
 export default function Checkout() {
   const { items, total, limpiar } = useCartStore();
@@ -14,7 +21,7 @@ export default function Checkout() {
   const [metodoPago, setMetodoPago] = useState<string | null>(null);
   const [submetodo, setSubmetodo] = useState<string | null>(null);
   const [procesando, setProcesando] = useState(false);
-  const [exito, setExito] = useState(false);
+  const [ticket, setTicket] = useState<TicketData | null>(null);
 
   const metodos = [
     { id: "efectivo", label: "Efectivo", emoji: "💵" },
@@ -28,11 +35,24 @@ export default function Checkout() {
     { id: "tarjeta", label: "Tarjeta", emoji: "💳", desc: "Crédito o débito" },
   ];
 
+  const metodoLabel = () => {
+    if (metodoPago === "efectivo") return "Efectivo";
+    if (metodoPago === "cuenta_corriente") return "Cuenta corriente";
+    if (metodoPago === "mercadopago") {
+      if (submetodo === "qr") return "Mercado Pago — QR";
+      if (submetodo === "transferencia") return "Mercado Pago — Transferencia";
+      if (submetodo === "tarjeta") return "Mercado Pago — Tarjeta";
+    }
+    return "";
+  };
+
   const confirmar = async () => {
     if (!metodoPago) return;
     if (metodoPago === "mercadopago" && !submetodo) return;
     setProcesando(true);
     try {
+      const ventaItems = items.map((i) => ({ ...i }));
+      const ventaTotal = total();
       await api.post("/sales", {
         tenantId: TENANT_ID,
         items: items.map((i) => ({
@@ -42,12 +62,22 @@ export default function Checkout() {
         })),
         pago: {
           metodo: metodoPago === "mercadopago" ? `mercadopago_${submetodo}` : metodoPago,
-          monto: total(),
+          monto: ventaTotal,
         },
       });
-      setExito(true);
       limpiar();
-      setTimeout(() => navigate("/"), 3000);
+      setTicket({
+        items: ventaItems.map((i) => ({
+          nombre: i.nombre,
+          sabor_tipo: i.sabor_tipo,
+          cantidad: i.cantidad,
+          precio: i.precio,
+        })),
+        total: ventaTotal,
+        metodo: metodoLabel(),
+        fecha: new Date().toLocaleString("es-AR"),
+        numero: Math.floor(Math.random() * 9000 + 1000).toString(),
+      });
     } catch {
       alert("Error al procesar la venta");
     } finally {
@@ -55,12 +85,60 @@ export default function Checkout() {
     }
   };
 
-  if (exito) {
+  if (ticket) {
     return (
-      <div className="min-h-screen bg-dark text-white flex flex-col items-center justify-center gap-4">
-        <span className="text-6xl">✅</span>
-        <h2 className="text-xl font-medium text-white">Venta confirmada</h2>
-        <p className="text-muted text-sm">Volviendo al catálogo...</p>
+      <div className="min-h-screen bg-dark text-white flex flex-col items-center justify-center px-4">
+        <div className="bg-dark-card border border-white/5 rounded-2xl p-6 w-full max-w-sm">
+          <div className="text-center mb-6">
+            <div className="text-4xl mb-3">✅</div>
+            <div className="text-white font-medium text-lg">Venta confirmada</div>
+            <div className="text-muted text-xs mt-1">Ticket #{ticket.numero}</div>
+          </div>
+
+          <div className="border-t border-white/5 border-dashed pt-4 mb-4">
+            <div className="text-xs text-muted uppercase tracking-wider mb-3">ScriptSolutions — Kiosco</div>
+            {ticket.items.map((item, i) => (
+              <div key={i} className="flex justify-between text-sm py-1.5">
+                <span className="text-white/70">{item.nombre} {item.sabor_tipo} x{item.cantidad}</span>
+                <span className="text-white">
+                  ${(item.precio * item.cantidad).toLocaleString("es-AR", { maximumFractionDigits: 0 })}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className="border-t border-white/5 border-dashed pt-4 mb-4">
+            <div className="flex justify-between items-center">
+              <span className="text-muted text-sm">Total</span>
+              <span className="text-primary font-medium text-xl">
+                ${ticket.total.toLocaleString("es-AR", { maximumFractionDigits: 0 })}
+              </span>
+            </div>
+            <div className="flex justify-between items-center mt-2">
+              <span className="text-muted text-xs">Método</span>
+              <span className="text-white/70 text-xs">{ticket.metodo}</span>
+            </div>
+            <div className="flex justify-between items-center mt-1">
+              <span className="text-muted text-xs">Fecha</span>
+              <span className="text-white/70 text-xs">{ticket.fecha}</span>
+            </div>
+          </div>
+
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={() => window.print()}
+              className="flex-1 border border-white/10 text-white/60 text-sm py-2.5 rounded-lg hover:border-white/20 transition-colors"
+            >
+              Imprimir
+            </button>
+            <button
+              onClick={() => navigate("/")}
+              className="flex-1 bg-primary text-white text-sm py-2.5 rounded-lg hover:bg-primary-dark transition-colors"
+            >
+              Nueva venta
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
