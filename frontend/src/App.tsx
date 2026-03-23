@@ -6,6 +6,7 @@ import Dashboard from "./pages/admin/Dashboard";
 import Importar from "./pages/admin/Importar";
 import Ventas from "./pages/admin/Ventas";
 import Clientes from "./pages/admin/Clientes";
+import Stock from "./pages/admin/Stock";
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         <Route path="/admin/importar" element={<Importar />} />
         <Route path="/admin/ventas" element={<Ventas />} />
         <Route path="/admin/clientes" element={<Clientes />} />
+        <Route path="/admin/stock" element={<Stock />} />
       </Routes>
     </BrowserRouter>
   );
