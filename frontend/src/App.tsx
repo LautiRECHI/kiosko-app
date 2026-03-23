@@ -5,6 +5,7 @@ import Checkout from "./pages/kiosco/Checkout";
 import Dashboard from "./pages/admin/Dashboard";
 import Importar from "./pages/admin/Importar";
 import Ventas from "./pages/admin/Ventas";
+import Clientes from "./pages/admin/Clientes";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/admin" element={<Dashboard />} />
         <Route path="/admin/importar" element={<Importar />} />
         <Route path="/admin/ventas" element={<Ventas />} />
+        <Route path="/admin/clientes" element={<Clientes />} />
       </Routes>
     </BrowserRouter>
   );
