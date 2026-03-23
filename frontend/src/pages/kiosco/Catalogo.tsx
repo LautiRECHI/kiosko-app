@@ -18,11 +18,30 @@ interface Producto {
   variantes: Variante[];
 }
 
+const getCategoriaColor = (categoria: string) => {
+  const colores: Record<string, string> = {
+    "Bebidas": "bg-blue-900/60 text-blue-300",
+    "Jugos": "bg-orange-900/60 text-orange-300",
+    "Snacks": "bg-yellow-900/60 text-yellow-300",
+    "Chocolates": "bg-amber-900/60 text-amber-300",
+    "Alfajores": "bg-amber-800/60 text-amber-200",
+    "Galletitas": "bg-orange-800/60 text-orange-200",
+    "Panaderia": "bg-yellow-800/60 text-yellow-200",
+    "Infusiones": "bg-red-900/60 text-red-300",
+    "Lacteos": "bg-sky-900/60 text-sky-300",
+    "Golosinas": "bg-pink-900/60 text-pink-300",
+    "Cigarrillos": "bg-gray-700/60 text-gray-300",
+    "Varios": "bg-purple-900/60 text-purple-300",
+  };
+  return colores[categoria] || "bg-white/5 text-white/50";
+};
+
 export default function Catalogo() {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [busqueda, setBusqueda] = useState("");
   const [categoriaActiva, setCategoriaActiva] = useState("Todos");
   const [scanFeedback, setScanFeedback] = useState("");
+  const [vista, setVista] = useState<"grilla" | "lista">("grilla");
   const searchRef = useRef<HTMLInputElement>(null);
   const agregar = useCartStore((s) => s.agregar);
   const items = useCartStore((s) => s.items);
@@ -84,15 +103,35 @@ export default function Catalogo() {
           onKeyDown={handleKeyDown}
           className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-white/70 placeholder-white/30 w-72 focus:outline-none focus:border-primary"
         />
-        <button
-          onClick={() => navigate("/carrito")}
-          className="bg-primary text-white text-sm font-medium px-4 py-2 rounded-lg"
-        >
-          Carrito ({totalItems})
-        </button>
+        <div className="flex items-center gap-3">
+          <div className="flex bg-white/5 rounded-lg p-1 gap-1">
+            <button
+              onClick={() => setVista("grilla")}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                vista === "grilla" ? "bg-primary text-white" : "text-white/40 hover:text-white/60"
+              }`}
+            >
+              Grilla
+            </button>
+            <button
+              onClick={() => setVista("lista")}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                vista === "lista" ? "bg-primary text-white" : "text-white/40 hover:text-white/60"
+              }`}
+            >
+              Lista
+            </button>
+          </div>
+          <button
+            onClick={() => navigate("/carrito")}
+            className="bg-primary text-white text-sm font-medium px-4 py-2 rounded-lg"
+          >
+            Carrito ({totalItems})
+          </button>
+        </div>
       </div>
 
-      <div className="px-6 py-4 flex gap-2">
+      <div className="px-6 py-4 flex gap-2 flex-wrap">
         {categorias.map((cat) => (
           <button
             key={cat}
@@ -108,36 +147,71 @@ export default function Catalogo() {
         ))}
       </div>
 
-      <div className="px-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pb-6">
-        {filtrados.map((producto) =>
-          producto.variantes.map((variante) => (
-            <div key={variante.id} className="bg-dark-card border border-white/5 rounded-xl overflow-hidden">
-              <div className="h-24 bg-white/5 flex items-center justify-center text-3xl">🛒</div>
-              <div className="p-3">
-                <div className="text-sm font-medium text-white">{producto.nombre}</div>
-                <div className="text-xs text-muted mb-3">{variante.sabor_tipo}</div>
-                <div className="flex items-center justify-between">
-                  <span className="text-primary font-medium text-sm">
-                    ${variante.precio.toLocaleString("es-AR", { maximumFractionDigits: 0 })}
-                  </span>
-                  <button
-                    onClick={() => agregar({
-                      varianteId: variante.id,
-                      nombre: producto.nombre,
-                      sabor_tipo: variante.sabor_tipo,
-                      precio: variante.precio,
-                      cantidad: 1,
-                    })}
-                    className="w-7 h-7 bg-primary rounded-lg text-white text-lg leading-none flex items-center justify-center hover:bg-primary-dark transition-colors"
-                  >
-                    +
-                  </button>
+      {vista === "grilla" ? (
+        <div className="px-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 pb-6">
+          {filtrados.map((producto) =>
+            producto.variantes.map((variante) => (
+              <div key={variante.id} className="bg-dark-card border border-white/5 rounded-xl overflow-hidden">
+                <div className={`h-24 flex items-center justify-center text-4xl font-bold ${getCategoriaColor(producto.categoria)}`}>
+                  {producto.nombre.charAt(0).toUpperCase()}
+                </div>
+                <div className="p-3">
+                  <div className="text-sm font-medium text-white">{producto.nombre}</div>
+                  <div className="text-xs text-muted mb-3">{variante.sabor_tipo}</div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-primary font-medium text-sm">
+                      ${variante.precio.toLocaleString("es-AR", { maximumFractionDigits: 0 })}
+                    </span>
+                    <button
+                      onClick={() => agregar({
+                        varianteId: variante.id,
+                        nombre: producto.nombre,
+                        sabor_tipo: variante.sabor_tipo,
+                        precio: variante.precio,
+                        cantidad: 1,
+                      })}
+                      className="w-7 h-7 bg-primary rounded-lg text-white text-lg leading-none flex items-center justify-center hover:bg-primary-dark transition-colors"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
-        )}
-      </div>
+            ))
+          )}
+        </div>
+      ) : (
+        <div className="px-6 flex flex-col gap-2 pb-6">
+          {filtrados.map((producto) =>
+            producto.variantes.map((variante) => (
+              <div key={variante.id} className="bg-dark-card border border-white/5 rounded-xl px-4 py-3 flex items-center gap-4">
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg font-bold flex-shrink-0 ${getCategoriaColor(producto.categoria)}`}>
+                  {producto.nombre.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-white truncate">{producto.nombre}</div>
+                  <div className="text-xs text-muted">{variante.sabor_tipo}</div>
+                </div>
+                <span className="text-primary font-medium text-sm flex-shrink-0">
+                  ${variante.precio.toLocaleString("es-AR", { maximumFractionDigits: 0 })}
+                </span>
+                <button
+                  onClick={() => agregar({
+                    varianteId: variante.id,
+                    nombre: producto.nombre,
+                    sabor_tipo: variante.sabor_tipo,
+                    precio: variante.precio,
+                    cantidad: 1,
+                  })}
+                  className="w-7 h-7 bg-primary rounded-lg text-white text-lg leading-none flex items-center justify-center hover:bg-primary-dark transition-colors flex-shrink-0"
+                >
+                  +
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      )}
 
       <div className="mx-6 mb-6 bg-primary/10 border border-primary/20 rounded-xl px-4 py-3 flex items-center gap-3">
         <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>

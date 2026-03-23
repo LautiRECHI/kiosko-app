@@ -52,6 +52,12 @@ export const importProducts = async (
       });
     }
 
+    const varianteExiste = await prisma.variante.findFirst({
+      where: { productoId: producto.id, sabor_tipo: row.sabor_tipo },
+    });
+
+    if (varianteExiste) continue;
+
     const variante = await prisma.variante.create({
       data: {
         productoId: producto.id,

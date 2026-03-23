@@ -3,7 +3,7 @@ import { useCartStore } from "../../store/cartStore";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/client";
 
-const TENANT_ID = "7904fad8-27b4-43c6-a82c-25b93fa7bfd3";
+const TENANT_ID = "f11f645a-0c64-4873-9c0a-b11f330fbb2c";
 const CBU = "0000003100012345678901";
 const ALIAS = "KIOSCO.DEMO.MP";
 

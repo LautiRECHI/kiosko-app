@@ -2,6 +2,38 @@ import { Request, Response } from "express";
 import { crearVenta } from "../services/sales.service";
 import prisma from "../lib/prisma";
 
+export const getSales = async (req: Request, res: Response) => {
+  try {
+    const { tenantId } = req.query;
+
+    const kioscos = await prisma.kiosco.findMany({
+      where: { tenantId: tenantId as string },
+      select: { id: true },
+    });
+
+    const kioscoIds = kioscos.map((k) => k.id);
+
+    const ventas = await prisma.venta.findMany({
+      where: { kioscoId: { in: kioscoIds } },
+      include: {
+        items: {
+          include: {
+            variante: {
+              include: { producto: true },
+            },
+          },
+        },
+        pagos: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json(ventas);
+  } catch (error) {
+    res.status(500).json({ error: "Error al obtener ventas" });
+  }
+};
+
 export const postSale = async (req: Request, res: Response) => {
   try {
     const { tenantId, items, pago, clienteId } = req.body;

@@ -1,7 +1,17 @@
 import { useEffect, useState } from "react";
 import api from "../../api/client";
 
-const TENANT_ID = "7904fad8-27b4-43c6-a82c-25b93fa7bfd3";
+const TENANT_ID = "f11f645a-0c64-4873-9c0a-b11f330fbb2c";
+
+const navItems = [
+  { label: "Dashboard", path: "/admin" },
+  { label: "Productos", path: "/admin/productos" },
+  { label: "Importar", path: "/admin/importar" },
+  { label: "Clientes", path: "/admin/clientes" },
+  { label: "Ventas", path: "/admin/ventas" },
+  { label: "Stock", path: "/admin/stock" },
+  { label: "Configuracion", path: "/admin/config" },
+];
 
 export default function Dashboard() {
   const [productos, setProductos] = useState<number>(0);
@@ -18,26 +28,19 @@ export default function Dashboard() {
           <div className="text-xs text-gray-400 mt-0.5">Panel admin</div>
         </div>
         <nav className="flex-1 py-4">
-          {[
-            { label: "Dashboard", active: true },
-            { label: "Productos", active: false },
-            { label: "Importar", active: false },
-            { label: "Clientes", active: false },
-            { label: "Ventas", active: false },
-            { label: "Stock", active: false },
-            { label: "Configuración", active: false },
-          ].map((item) => (
-            <div
+          {navItems.map((item) => (
+     <a       
               key={item.label}
-              className={`px-6 py-2.5 text-sm cursor-pointer flex items-center gap-3 border-l-2 ${
-                item.active
+              href={item.path}
+              className={`px-6 py-2.5 text-sm flex items-center gap-3 border-l-2 no-underline ${
+                item.label === "Dashboard"
                   ? "border-primary text-primary-dark font-medium bg-blue-50"
                   : "border-transparent text-gray-400 hover:text-gray-600"
               }`}
             >
               <div className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></div>
               {item.label}
-            </div>
+            </a>
           ))}
         </nav>
       </aside>
