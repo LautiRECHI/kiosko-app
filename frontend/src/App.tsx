@@ -5,6 +5,7 @@ import Catalogo from "./pages/kiosco/Catalogo";
 import Carrito from "./pages/kiosco/Carrito";
 import Checkout from "./pages/kiosco/Checkout";
 import Dashboard from "./pages/admin/Dashboard";
+import Productos from "./pages/admin/Productos";
 import Importar from "./pages/admin/Importar";
 import Ventas from "./pages/admin/Ventas";
 import Clientes from "./pages/admin/Clientes";
@@ -36,6 +37,11 @@ function App() {
         <Route path="/admin" element={
           <ProtectedRoute role="admin">
             <Dashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/productos" element={
+          <ProtectedRoute role="admin">
+            <Productos />
           </ProtectedRoute>
         } />
         <Route path="/admin/importar" element={
