@@ -6,6 +6,7 @@ import salesRouter from "./routes/sales";
 import clientsRouter from "./routes/clients";
 import stockRouter from "./routes/stock";
 import configRouter from "./routes/config";
+import authRouter from "./routes/auth";
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.get("/", (req, res) => {
   res.json({ mensaje: "API Kiosco funcionando 🚀" });
 });
 
+app.use("/auth", authRouter);
 app.use("/products", productsRouter);
 app.use("/import", importRouter);
 app.use("/sales", salesRouter);

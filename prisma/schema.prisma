@@ -15,6 +15,9 @@ model Tenant {
   margen_porcentaje  Float     @default(35)
   cbu                String?
   alias              String?
+  email              String    @unique
+  password           String
+  pin_kiosco         String    @default("1234")
   createdAt          DateTime  @default(now())
 
   kioscos    Kiosco[]
