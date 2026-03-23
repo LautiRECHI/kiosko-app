@@ -7,6 +7,7 @@ import Importar from "./pages/admin/Importar";
 import Ventas from "./pages/admin/Ventas";
 import Clientes from "./pages/admin/Clientes";
 import Stock from "./pages/admin/Stock";
+import Configuracion from "./pages/admin/Configuracion";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/admin/ventas" element={<Ventas />} />
         <Route path="/admin/clientes" element={<Clientes />} />
         <Route path="/admin/stock" element={<Stock />} />
+        <Route path="/admin/config" element={<Configuracion />} />
       </Routes>
     </BrowserRouter>
   );

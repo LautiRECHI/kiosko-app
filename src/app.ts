@@ -5,6 +5,7 @@ import importRouter from "./routes/import";
 import salesRouter from "./routes/sales";
 import clientsRouter from "./routes/clients";
 import stockRouter from "./routes/stock";
+import configRouter from "./routes/config";
 
 const app = express();
 
@@ -20,5 +21,6 @@ app.use("/import", importRouter);
 app.use("/sales", salesRouter);
 app.use("/clients", clientsRouter);
 app.use("/stock", stockRouter);
+app.use("/config", configRouter);
 
 export default app;

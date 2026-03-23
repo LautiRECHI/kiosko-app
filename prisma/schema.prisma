@@ -13,6 +13,8 @@ model Tenant {
   plan               String    @default("basic")
   iva_porcentaje     Float     @default(21)
   margen_porcentaje  Float     @default(35)
+  cbu                String?
+  alias              String?
   createdAt          DateTime  @default(now())
 
   kioscos    Kiosco[]
