@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import api from "../../api/client";
+import Sidebar from "../../components/Sidebar";
 
 const TENANT_ID = "5ac9239b-27df-46e8-8bcb-317fd34825f2";
 
@@ -11,7 +12,7 @@ interface Cliente {
   createdAt: string;
 }
 
-const navItems = [
+ [
   { label: "Dashboard", path: "/admin" },
   { label: "Productos", path: "/admin/productos" },
   { label: "Importar", path: "/admin/importar" },
@@ -67,29 +68,7 @@ export default function Clientes() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <aside className="w-56 bg-white border-r border-gray-100 flex flex-col">
-        <div className="px-6 py-5 border-b border-gray-100">
-          <span className="text-primary-dark font-medium text-sm tracking-wide">ScriptSolutions</span>
-          <div className="text-xs text-gray-400 mt-0.5">Panel admin</div>
-        </div>
-        <nav className="flex-1 py-4">
-          {navItems.map((item) => (
-            <a
-              key={item.label}
-              href={item.path}
-              className={`px-6 py-2.5 text-sm flex items-center gap-3 border-l-2 no-underline ${
-                item.label === "Clientes"
-                  ? "border-primary text-primary-dark font-medium bg-blue-50"
-                  : "border-transparent text-gray-400 hover:text-gray-600"
-              }`}
-            >
-              <div className="w-1.5 h-1.5 rounded-full bg-current opacity-60"></div>
-              {item.label}
-            </a>
-          ))}
-        </nav>
-      </aside>
-
+      <Sidebar active="Clientes" />
       <main className="flex-1 px-8 py-6">
         <div className="mb-6 flex items-center justify-between">
           <div>
