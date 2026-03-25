@@ -27,7 +27,7 @@ interface Venta {
 
 const TENANT_ID = "5ac9239b-27df-46e8-8bcb-317fd34825f2";
 
-const navItems = [
+ [
   { label: "Dashboard", path: "/admin" },
   { label: "Productos", path: "/admin/productos" },
   { label: "Importar", path: "/admin/importar" },
