@@ -28,4 +28,4 @@ export const useAuthStore = create<AuthStore>((set) => ({
 const stored = localStorage.getItem("auth");
 if (stored) {
   useAuthStore.setState({ user: JSON.parse(stored) });
-}
+} 
