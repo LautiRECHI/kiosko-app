@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Login from "./pages/Login";
 import LoginKiosco from "./pages/LoginKiosco";
+import SuperadminLogin from "./pages/SuperadminLogin";
+import Superadmin from "./pages/Superadmin";
 import Catalogo from "./pages/kiosco/Catalogo";
 import Carrito from "./pages/kiosco/Carrito";
 import Checkout from "./pages/kiosco/Checkout";
@@ -19,6 +21,8 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/login-kiosco" element={<LoginKiosco />} />
+        <Route path="/superadmin/login" element={<SuperadminLogin />} />
+        <Route path="/superadmin" element={<Superadmin />} />
         <Route path="/" element={
           <ProtectedRoute role="kiosco">
             <Catalogo />
@@ -44,31 +48,11 @@ function App() {
             <Productos />
           </ProtectedRoute>
         } />
-        <Route path="/admin/importar" element={
-          <ProtectedRoute role="admin">
-            <Importar />
-          </ProtectedRoute>
-        } />
-        <Route path="/admin/ventas" element={
-          <ProtectedRoute role="admin">
-            <Ventas />
-          </ProtectedRoute>
-        } />
-        <Route path="/admin/clientes" element={
-          <ProtectedRoute role="admin">
-            <Clientes />
-          </ProtectedRoute>
-        } />
-        <Route path="/admin/stock" element={
-          <ProtectedRoute role="admin">
-            <Stock />
-          </ProtectedRoute>
-        } />
-        <Route path="/admin/config" element={
-          <ProtectedRoute role="admin">
-            <Configuracion />
-          </ProtectedRoute>
-        } />
+        <Route path="/admin/importar" element={<ProtectedRoute role="admin"><Importar /></ProtectedRoute>} />
+        <Route path="/admin/ventas" element={<ProtectedRoute role="admin"><Ventas /></ProtectedRoute>} />
+        <Route path="/admin/clientes" element={<ProtectedRoute role="admin"><Clientes /></ProtectedRoute>} />
+        <Route path="/admin/stock" element={<ProtectedRoute role="admin"><Stock /></ProtectedRoute>} />
+        <Route path="/admin/config" element={<ProtectedRoute role="admin"><Configuracion /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   );

@@ -18,6 +18,8 @@ model Tenant {
   email              String    @unique
   password           String
   pin_kiosco         String    @default("1234")
+  activo             Boolean   @default(true)
+  suscripcion_vence  DateTime?
   createdAt          DateTime  @default(now())
 
   kioscos    Kiosco[]
@@ -121,4 +123,11 @@ model Pago {
   createdAt         DateTime @default(now())
 
   venta Venta @relation(fields: [ventaId], references: [id])
+}
+
+model Superadmin {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
 }

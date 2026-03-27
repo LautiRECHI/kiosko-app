@@ -7,6 +7,7 @@ import clientsRouter from "./routes/clients";
 import stockRouter from "./routes/stock";
 import configRouter from "./routes/config";
 import authRouter from "./routes/auth";
+import superadminRouter from "./routes/superadmin";
 
 const app = express();
 
@@ -18,6 +19,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/auth", authRouter);
+app.use("/superadmin", superadminRouter);
 app.use("/products", productsRouter);
 app.use("/import", importRouter);
 app.use("/sales", salesRouter);
