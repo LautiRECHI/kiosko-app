@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import api from "../api/client";
 import { useAuthStore } from "../store/authStore";
 
-const TENANT_ID = "5ac9239b-27df-46e8-8bcb-317fd34825f2";
+const TENANT_ID = "05b12305-6d76-4e8d-a0e3-394737427413";
 
 export default function LoginKiosco() {
   const [pin, setPin] = useState("");

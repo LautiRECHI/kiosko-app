@@ -25,7 +25,7 @@ interface Venta {
   pagos: Pago[];
 }
 
-const TENANT_ID = "5ac9239b-27df-46e8-8bcb-317fd34825f2";
+const TENANT_ID = "05b12305-6d76-4e8d-a0e3-394737427413";
 
  [
   { label: "Dashboard", path: "/admin" },
