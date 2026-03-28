@@ -9,22 +9,13 @@ export const loginSuperadmin = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
     const superadmin = await prisma.superadmin.findUnique({ where: { email } });
-
-    if (!superadmin) {
-      res.status(401).json({ error: "Credenciales incorrectas" });
-      return;
-    }
-
+    if (!superadmin) { res.status(401).json({ error: "Credenciales incorrectas" }); return; }
     const ok = await bcrypt.compare(password, superadmin.password);
-    if (!ok) {
-      res.status(401).json({ error: "Credenciales incorrectas" });
-      return;
-    }
-
+    if (!ok) { res.status(401).json({ error: "Credenciales incorrectas" }); return; }
     const token = jwt.sign({ superadminId: superadmin.id, role: "superadmin" }, JWT_SECRET, { expiresIn: "7d" });
     res.json({ token, email: superadmin.email });
   } catch {
-    res.status(500).json({ error: "Error al iniciar sesión" });
+    res.status(500).json({ error: "Error al iniciar sesion" });
   }
 };
 
@@ -49,9 +40,7 @@ export const createTenant = async (req: Request, res: Response) => {
     const hash = await bcrypt.hash(password, 10);
     const tenant = await prisma.tenant.create({
       data: {
-        nombre,
-        email,
-        password: hash,
+        nombre, email, password: hash,
         pin_kiosco: pin_kiosco || "1234",
         plan: plan || "basic",
         suscripcion_vence: suscripcion_vence ? new Date(suscripcion_vence) : null,
@@ -65,18 +54,37 @@ export const createTenant = async (req: Request, res: Response) => {
 
 export const toggleTenant = async (req: Request, res: Response) => {
   try {
-   const id = req.params.id as string; 
+    const id = req.params.id as string;
     const tenant = await prisma.tenant.findUnique({ where: { id } });
-    if (!tenant) {
-      res.status(404).json({ error: "Cliente no encontrado" });
-      return;
-    }
-    const updated = await prisma.tenant.update({
-      where: { id },
-      data: { activo: !tenant.activo },
-    });
+    if (!tenant) { res.status(404).json({ error: "Cliente no encontrado" }); return; }
+    const updated = await prisma.tenant.update({ where: { id }, data: { activo: !tenant.activo } });
     res.json(updated);
   } catch {
     res.status(500).json({ error: "Error al actualizar cliente" });
+  }
+};
+
+export const updateTenant = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const { nombre, email, password, pin_kiosco, plan, suscripcion_vence } = req.body;
+    const data: any = { nombre, email, plan };
+    if (password) data.password = await bcrypt.hash(password, 10);
+    if (pin_kiosco) data.pin_kiosco = pin_kiosco;
+    if (suscripcion_vence) data.suscripcion_vence = new Date(suscripcion_vence);
+    const tenant = await prisma.tenant.update({ where: { id }, data });
+    res.json(tenant);
+  } catch {
+    res.status(500).json({ error: "Error al actualizar cliente" });
+  }
+};
+
+export const deleteTenant = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    await prisma.tenant.delete({ where: { id } });
+    res.json({ mensaje: "Cliente eliminado" });
+  } catch {
+    res.status(500).json({ error: "Error al eliminar cliente" });
   }
 };

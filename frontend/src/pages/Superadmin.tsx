@@ -19,6 +19,7 @@ export default function Superadmin() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [cargando, setCargando] = useState(true);
   const [mostrarForm, setMostrarForm] = useState(false);
+  const [editando, setEditando] = useState<Tenant | null>(null);
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -42,19 +43,43 @@ export default function Superadmin() {
       .finally(() => setCargando(false));
   };
 
-  const crearCliente = async () => {
-    if (!nombre || !email || !password) return;
+  const abrirEditar = (t: Tenant) => {
+    setEditando(t);
+    setNombre(t.nombre);
+    setEmail(t.email);
+    setPassword("");
+    setPin(t.pin_kiosco);
+    setPlan(t.plan);
+    setVencimiento(t.suscripcion_vence ? t.suscripcion_vence.split("T")[0] : "");
+    setMostrarForm(true);
+  };
+
+  const cerrarForm = () => {
+    setMostrarForm(false);
+    setEditando(null);
+    setNombre(""); setEmail(""); setPassword(""); setPin("1234"); setPlan("basic"); setVencimiento("");
+  };
+
+  const guardar = async () => {
+    if (!nombre || !email) return;
     setGuardando(true);
     try {
-      await api.post("/superadmin/tenants", {
-        nombre, email, password, pin_kiosco: pin, plan,
-        suscripcion_vence: vencimiento || null,
-      }, { headers: { Authorization: `Bearer ${token}` } });
-      setMostrarForm(false);
-      setNombre(""); setEmail(""); setPassword(""); setPin("1234"); setPlan("basic"); setVencimiento("");
+      if (editando) {
+        await api.put(`/superadmin/tenants/${editando.id}`, {
+          nombre, email, password: password || undefined, pin_kiosco: pin, plan,
+          suscripcion_vence: vencimiento || null,
+        }, { headers: { Authorization: `Bearer ${token}` } });
+      } else {
+        if (!password) return;
+        await api.post("/superadmin/tenants", {
+          nombre, email, password, pin_kiosco: pin, plan,
+          suscripcion_vence: vencimiento || null,
+        }, { headers: { Authorization: `Bearer ${token}` } });
+      }
+      cerrarForm();
       cargar();
     } catch {
-      alert("Error al crear cliente");
+      alert("Error al guardar cliente");
     } finally {
       setGuardando(false);
     }
@@ -66,6 +91,16 @@ export default function Superadmin() {
       cargar();
     } catch {
       alert("Error al actualizar cliente");
+    }
+  };
+
+  const eliminarCliente = async (id: string, nombre: string) => {
+    if (!confirm(`¿Eliminar a ${nombre}? Esta acción no se puede deshacer.`)) return;
+    try {
+      await api.delete(`/superadmin/tenants/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      cargar();
+    } catch {
+      alert("Error al eliminar cliente");
     }
   };
 
@@ -95,7 +130,7 @@ export default function Superadmin() {
             <h1 className="text-xl font-medium text-white">Clientes</h1>
             <p className="text-sm text-white/40 mt-1">Gestión de suscripciones</p>
           </div>
-          <button onClick={() => setMostrarForm(!mostrarForm)} className="bg-purple-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
+          <button onClick={() => { cerrarForm(); setMostrarForm(true); }} className="bg-purple-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
             + Nuevo cliente
           </button>
         </div>
@@ -117,7 +152,9 @@ export default function Superadmin() {
 
         {mostrarForm && (
           <div className="bg-gray-900 border border-white/5 rounded-xl p-6 mb-6">
-            <div className="text-sm font-medium text-white mb-4">Nuevo cliente</div>
+            <div className="text-sm font-medium text-white mb-4">
+              {editando ? `Editando: ${editando.nombre}` : "Nuevo cliente"}
+            </div>
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <div className="text-xs text-white/40 mb-1">Nombre del negocio</div>
@@ -128,7 +165,7 @@ export default function Superadmin() {
                 <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@kioscoelsol.com" className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500" />
               </div>
               <div>
-                <div className="text-xs text-white/40 mb-1">Contraseña</div>
+                <div className="text-xs text-white/40 mb-1">{editando ? "Nueva contraseña (dejar vacío para no cambiar)" : "Contraseña"}</div>
                 <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500" />
               </div>
               <div>
@@ -148,10 +185,10 @@ export default function Superadmin() {
               </div>
             </div>
             <div className="flex gap-3">
-              <button onClick={crearCliente} disabled={guardando} className="bg-purple-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-40 transition-colors">
-                {guardando ? "Guardando..." : "Crear cliente"}
+              <button onClick={guardar} disabled={guardando} className="bg-purple-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-purple-700 disabled:opacity-40 transition-colors">
+                {guardando ? "Guardando..." : editando ? "Guardar cambios" : "Crear cliente"}
               </button>
-              <button onClick={() => setMostrarForm(false)} className="text-sm text-white/40 hover:text-white/60">Cancelar</button>
+              <button onClick={cerrarForm} className="text-sm text-white/40 hover:text-white/60">Cancelar</button>
             </div>
           </div>
         )}
@@ -171,6 +208,7 @@ export default function Superadmin() {
                   <th className="text-left px-5 py-3 text-xs text-white/40 font-medium">Vencimiento</th>
                   <th className="text-right px-5 py-3 text-xs text-white/40 font-medium">Productos</th>
                   <th className="text-center px-5 py-3 text-xs text-white/40 font-medium">Estado</th>
+                  <th className="text-center px-5 py-3 text-xs text-white/40 font-medium">Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -192,6 +230,12 @@ export default function Superadmin() {
                       >
                         {t.activo ? "Activo" : "Suspendido"}
                       </button>
+                    </td>
+                    <td className="px-5 py-3 text-center">
+                      <div className="flex gap-2 justify-center">
+                        <button onClick={() => abrirEditar(t)} className="text-xs text-purple-400 hover:underline">Editar</button>
+                        <button onClick={() => eliminarCliente(t.id, t.nombre)} className="text-xs text-red-400 hover:underline">Eliminar</button>
+                      </div>
                     </td>
                   </tr>
                 ))}

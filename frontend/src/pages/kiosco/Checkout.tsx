@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCartStore } from "../../store/cartStore";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/client";
@@ -6,6 +6,13 @@ import api from "../../api/client";
 const TENANT_ID = "05b12305-6d76-4e8d-a0e3-394737427413";
 const CBU = "0000003100012345678901";
 const ALIAS = "KIOSCO.DEMO.MP";
+
+interface Cliente {
+  id: string;
+  nombre: string;
+  telefono: string | null;
+  saldoCuenta: number;
+}
 
 interface TicketData {
   items: { nombre: string; sabor_tipo: string; cantidad: number; precio: number }[];
@@ -22,6 +29,35 @@ export default function Checkout() {
   const [submetodo, setSubmetodo] = useState<string | null>(null);
   const [procesando, setProcesando] = useState(false);
   const [ticket, setTicket] = useState<TicketData | null>(null);
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [busquedaCliente, setBusquedaCliente] = useState("");
+  const [clienteSeleccionado, setClienteSeleccionado] = useState<Cliente | null>(null);
+  const [nuevoNombre, setNuevoNombre] = useState("");
+  const [nuevoTelefono, setNuevoTelefono] = useState("");
+  const [mostrarNuevoCliente, setMostrarNuevoCliente] = useState(false);
+
+  useEffect(() => {
+    if (metodoPago === "cuenta_corriente") {
+      api.get(`/clients?tenantId=${TENANT_ID}`).then((res) => setClientes(res.data));
+    }
+  }, [metodoPago]);
+
+  const clientesFiltrados = clientes.filter((c) =>
+    c.nombre.toLowerCase().includes(busquedaCliente.toLowerCase())
+  );
+
+  const crearYSeleccionarCliente = async () => {
+    if (!nuevoNombre.trim()) return;
+    try {
+      const res = await api.post("/clients", { tenantId: TENANT_ID, nombre: nuevoNombre, telefono: nuevoTelefono });
+      setClienteSeleccionado(res.data);
+      setMostrarNuevoCliente(false);
+      setNuevoNombre("");
+      setNuevoTelefono("");
+    } catch {
+      alert("Error al crear cliente");
+    }
+  };
 
   const metodos = [
     { id: "efectivo", label: "Efectivo", emoji: "💵" },
@@ -30,9 +66,9 @@ export default function Checkout() {
   ];
 
   const submetodos = [
-    { id: "qr", label: "Código QR", emoji: "📲", desc: "Escaneá con la app de Mercado Pago" },
+    { id: "qr", label: "Codigo QR", emoji: "📲", desc: "Escanea con la app de Mercado Pago" },
     { id: "transferencia", label: "Transferencia", emoji: "🏦", desc: "CBU o alias" },
-    { id: "tarjeta", label: "Tarjeta", emoji: "💳", desc: "Crédito o débito" },
+    { id: "tarjeta", label: "Tarjeta", emoji: "💳", desc: "Credito o debito" },
   ];
 
   const metodoLabel = () => {
@@ -49,12 +85,14 @@ export default function Checkout() {
   const confirmar = async () => {
     if (!metodoPago) return;
     if (metodoPago === "mercadopago" && !submetodo) return;
+    if (metodoPago === "cuenta_corriente" && !clienteSeleccionado) return;
     setProcesando(true);
     try {
       const ventaItems = items.map((i) => ({ ...i }));
       const ventaTotal = total();
       await api.post("/sales", {
         tenantId: TENANT_ID,
+        clienteId: clienteSeleccionado?.id || null,
         items: items.map((i) => ({
           varianteId: i.varianteId,
           cantidad: i.cantidad,
@@ -94,28 +132,22 @@ export default function Checkout() {
             <div className="text-white font-medium text-lg">Venta confirmada</div>
             <div className="text-muted text-xs mt-1">Ticket #{ticket.numero}</div>
           </div>
-
           <div className="border-t border-white/5 border-dashed pt-4 mb-4">
             <div className="text-xs text-muted uppercase tracking-wider mb-3">ScriptSolutions — Kiosco</div>
             {ticket.items.map((item, i) => (
               <div key={i} className="flex justify-between text-sm py-1.5">
                 <span className="text-white/70">{item.nombre} {item.sabor_tipo} x{item.cantidad}</span>
-                <span className="text-white">
-                  ${(item.precio * item.cantidad).toLocaleString("es-AR", { maximumFractionDigits: 0 })}
-                </span>
+                <span className="text-white">${(item.precio * item.cantidad).toLocaleString("es-AR", { maximumFractionDigits: 0 })}</span>
               </div>
             ))}
           </div>
-
           <div className="border-t border-white/5 border-dashed pt-4 mb-4">
             <div className="flex justify-between items-center">
               <span className="text-muted text-sm">Total</span>
-              <span className="text-primary font-medium text-xl">
-                ${ticket.total.toLocaleString("es-AR", { maximumFractionDigits: 0 })}
-              </span>
+              <span className="text-primary font-medium text-xl">${ticket.total.toLocaleString("es-AR", { maximumFractionDigits: 0 })}</span>
             </div>
             <div className="flex justify-between items-center mt-2">
-              <span className="text-muted text-xs">Método</span>
+              <span className="text-muted text-xs">Metodo</span>
               <span className="text-white/70 text-xs">{ticket.metodo}</span>
             </div>
             <div className="flex justify-between items-center mt-1">
@@ -123,20 +155,9 @@ export default function Checkout() {
               <span className="text-white/70 text-xs">{ticket.fecha}</span>
             </div>
           </div>
-
           <div className="flex gap-3 mt-6">
-            <button
-              onClick={() => window.print()}
-              className="flex-1 border border-white/10 text-white/60 text-sm py-2.5 rounded-lg hover:border-white/20 transition-colors"
-            >
-              Imprimir
-            </button>
-            <button
-              onClick={() => navigate("/")}
-              className="flex-1 bg-primary text-white text-sm py-2.5 rounded-lg hover:bg-primary-dark transition-colors"
-            >
-              Nueva venta
-            </button>
+            <button onClick={() => window.print()} className="flex-1 border border-white/10 text-white/60 text-sm py-2.5 rounded-lg hover:border-white/20 transition-colors">Imprimir</button>
+            <button onClick={() => navigate("/")} className="flex-1 bg-primary text-white text-sm py-2.5 rounded-lg hover:bg-primary-dark transition-colors">Nueva venta</button>
           </div>
         </div>
       </div>
@@ -146,9 +167,7 @@ export default function Checkout() {
   return (
     <div className="min-h-screen bg-dark text-white flex flex-col">
       <div className="bg-dark-card border-b border-white/5 px-6 py-4 flex items-center justify-between">
-        <button onClick={() => navigate("/carrito")} className="text-primary text-sm font-medium">
-          ← Volver al carrito
-        </button>
+        <button onClick={() => navigate("/carrito")} className="text-primary text-sm font-medium">← Volver al carrito</button>
         <span className="text-white font-medium">Checkout</span>
         <span />
       </div>
@@ -159,31 +178,20 @@ export default function Checkout() {
           {items.map((item) => (
             <div key={item.varianteId} className="flex justify-between text-sm py-1">
               <span className="text-white/70">{item.nombre} x{item.cantidad}</span>
-              <span className="text-white">
-                ${(item.precio * item.cantidad).toLocaleString("es-AR", { maximumFractionDigits: 0 })}
-              </span>
+              <span className="text-white">${(item.precio * item.cantidad).toLocaleString("es-AR", { maximumFractionDigits: 0 })}</span>
             </div>
           ))}
           <div className="border-t border-white/5 mt-3 pt-3 flex justify-between">
             <span className="text-muted text-sm">Total</span>
-            <span className="text-primary font-medium text-lg">
-              ${total().toLocaleString("es-AR", { maximumFractionDigits: 0 })}
-            </span>
+            <span className="text-primary font-medium text-lg">${total().toLocaleString("es-AR", { maximumFractionDigits: 0 })}</span>
           </div>
         </div>
 
-        <div className="text-xs text-muted uppercase tracking-wider mb-3">Método de pago</div>
+        <div className="text-xs text-muted uppercase tracking-wider mb-3">Metodo de pago</div>
         <div className="flex flex-col gap-3 mb-4">
           {metodos.map((m) => (
-            <button
-              key={m.id}
-              onClick={() => { setMetodoPago(m.id); setSubmetodo(null); }}
-              className={`flex items-center gap-4 px-4 py-4 rounded-xl border transition-all ${
-                metodoPago === m.id
-                  ? "border-primary bg-primary/10 text-white"
-                  : "border-white/5 bg-dark-card text-white/60 hover:border-white/20"
-              }`}
-            >
+            <button key={m.id} onClick={() => { setMetodoPago(m.id); setSubmetodo(null); setClienteSeleccionado(null); setBusquedaCliente(""); }}
+              className={`flex items-center gap-4 px-4 py-4 rounded-xl border transition-all ${metodoPago === m.id ? "border-primary bg-primary/10 text-white" : "border-white/5 bg-dark-card text-white/60 hover:border-white/20"}`}>
               <span className="text-2xl">{m.emoji}</span>
               <span className="text-sm font-medium">{m.label}</span>
               {metodoPago === m.id && <span className="ml-auto text-primary text-lg">✓</span>}
@@ -196,15 +204,8 @@ export default function Checkout() {
             <div className="text-xs text-muted uppercase tracking-wider mb-3">Tipo de pago</div>
             <div className="flex flex-col gap-3">
               {submetodos.map((s) => (
-                <button
-                  key={s.id}
-                  onClick={() => setSubmetodo(s.id)}
-                  className={`flex items-center gap-4 px-4 py-3 rounded-xl border transition-all ${
-                    submetodo === s.id
-                      ? "border-primary bg-primary/10 text-white"
-                      : "border-white/5 bg-dark-card text-white/60 hover:border-white/20"
-                  }`}
-                >
+                <button key={s.id} onClick={() => setSubmetodo(s.id)}
+                  className={`flex items-center gap-4 px-4 py-3 rounded-xl border transition-all ${submetodo === s.id ? "border-primary bg-primary/10 text-white" : "border-white/5 bg-dark-card text-white/60 hover:border-white/20"}`}>
                   <span className="text-xl">{s.emoji}</span>
                   <div className="text-left">
                     <div className="text-sm font-medium">{s.label}</div>
@@ -214,46 +215,66 @@ export default function Checkout() {
                 </button>
               ))}
             </div>
-
             {submetodo === "qr" && (
               <div className="mt-4 bg-white rounded-xl p-6 flex flex-col items-center gap-3">
-                <div className="w-40 h-40 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <span className="text-5xl">📲</span>
-                </div>
-                <p className="text-dark text-sm font-medium">Escaneá con Mercado Pago</p>
-                <p className="text-gray-400 text-xs">
-                  ${total().toLocaleString("es-AR", { maximumFractionDigits: 0 })}
-                </p>
+                <div className="w-40 h-40 bg-gray-100 rounded-lg flex items-center justify-center"><span className="text-5xl">📲</span></div>
+                <p className="text-dark text-sm font-medium">Escanea con Mercado Pago</p>
+                <p className="text-gray-400 text-xs">${total().toLocaleString("es-AR", { maximumFractionDigits: 0 })}</p>
               </div>
             )}
-
             {submetodo === "transferencia" && (
               <div className="mt-4 bg-dark-card border border-white/5 rounded-xl p-4 flex flex-col gap-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-muted">CBU</span>
-                  <span className="text-sm text-white font-mono">{CBU}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-muted">Alias</span>
-                  <span className="text-sm text-white font-mono">{ALIAS}</span>
-                </div>
-                <div className="flex justify-between items-center border-t border-white/5 pt-3">
-                  <span className="text-xs text-muted">Monto</span>
-                  <span className="text-primary font-medium">
-                    ${total().toLocaleString("es-AR", { maximumFractionDigits: 0 })}
-                  </span>
-                </div>
+                <div className="flex justify-between items-center"><span className="text-xs text-muted">CBU</span><span className="text-sm text-white font-mono">{CBU}</span></div>
+                <div className="flex justify-between items-center"><span className="text-xs text-muted">Alias</span><span className="text-sm text-white font-mono">{ALIAS}</span></div>
+                <div className="flex justify-between items-center border-t border-white/5 pt-3"><span className="text-xs text-muted">Monto</span><span className="text-primary font-medium">${total().toLocaleString("es-AR", { maximumFractionDigits: 0 })}</span></div>
               </div>
             )}
-
             {submetodo === "tarjeta" && (
               <div className="mt-4 bg-dark-card border border-white/5 rounded-xl p-4">
-                <p className="text-sm text-white/60 text-center">
-                  Pasá la tarjeta por el posnet de Mercado Pago
-                </p>
-                <p className="text-primary text-center font-medium mt-2">
-                  ${total().toLocaleString("es-AR", { maximumFractionDigits: 0 })}
-                </p>
+                <p className="text-sm text-white/60 text-center">Pasa la tarjeta por el posnet de Mercado Pago</p>
+                <p className="text-primary text-center font-medium mt-2">${total().toLocaleString("es-AR", { maximumFractionDigits: 0 })}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {metodoPago === "cuenta_corriente" && (
+          <div className="mb-6">
+            <div className="text-xs text-muted uppercase tracking-wider mb-3">Seleccionar cliente</div>
+            {clienteSeleccionado ? (
+              <div className="bg-primary/10 border border-primary/20 rounded-xl px-4 py-3 flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium text-white">{clienteSeleccionado.nombre}</div>
+                  <div className="text-xs text-muted">Saldo: ${clienteSeleccionado.saldoCuenta.toLocaleString("es-AR", { maximumFractionDigits: 0 })}</div>
+                </div>
+                <button onClick={() => setClienteSeleccionado(null)} className="text-xs text-muted hover:text-white">Cambiar</button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <input type="text" value={busquedaCliente} onChange={(e) => setBusquedaCliente(e.target.value)} placeholder="Buscar cliente..." className="bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-white/70 placeholder-white/30 focus:outline-none focus:border-primary" />
+                {busquedaCliente && (
+                  <div className="bg-dark-card border border-white/5 rounded-xl overflow-hidden">
+                    {clientesFiltrados.length === 0 ? (
+                      <div className="px-4 py-3 text-xs text-muted">No se encontraron clientes</div>
+                    ) : (
+                      clientesFiltrados.map((c) => (
+                        <button key={c.id} onClick={() => { setClienteSeleccionado(c); setBusquedaCliente(""); }}
+                          className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0">
+                          <span className="text-sm text-white">{c.nombre}</span>
+                          <span className="text-xs text-muted">Saldo: ${c.saldoCuenta.toLocaleString("es-AR", { maximumFractionDigits: 0 })}</span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                )}
+                <button onClick={() => setMostrarNuevoCliente(!mostrarNuevoCliente)} className="text-xs text-primary hover:underline text-left">+ Crear cliente nuevo</button>
+                {mostrarNuevoCliente && (
+                  <div className="bg-dark-card border border-white/5 rounded-xl p-4 flex flex-col gap-3">
+                    <input type="text" value={nuevoNombre} onChange={(e) => setNuevoNombre(e.target.value)} placeholder="Nombre del cliente" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white/70 placeholder-white/30 focus:outline-none focus:border-primary" />
+                    <input type="text" value={nuevoTelefono} onChange={(e) => setNuevoTelefono(e.target.value)} placeholder="Telefono (opcional)" className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white/70 placeholder-white/30 focus:outline-none focus:border-primary" />
+                    <button onClick={crearYSeleccionarCliente} className="bg-primary text-white text-sm py-2 rounded-lg hover:bg-primary-dark transition-colors">Crear y seleccionar</button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -261,7 +282,7 @@ export default function Checkout() {
 
         <button
           onClick={confirmar}
-          disabled={!metodoPago || (metodoPago === "mercadopago" && !submetodo) || procesando}
+          disabled={!metodoPago || (metodoPago === "mercadopago" && !submetodo) || (metodoPago === "cuenta_corriente" && !clienteSeleccionado) || procesando}
           className="w-full bg-primary text-white font-medium py-3 rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {procesando ? "Procesando..." : "Confirmar venta"}

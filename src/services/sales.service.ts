@@ -36,5 +36,12 @@ export const crearVenta = async (
     });
   }
 
+  if (pago.metodo === "cuenta_corriente" && clienteId) {
+    await prisma.cliente.update({
+      where: { id: clienteId },
+      data: { saldoCuenta: { decrement: total } },
+    });
+  }
+
   return venta;
 };
